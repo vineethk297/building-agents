@@ -6,6 +6,9 @@ client = anthropic.Anthropic()
 def get_weather(city):
     return f"It is sunny, 85F in {city}"
 
+def calculate(expresson):
+    return eval(expresson)
+
 get_weather_tool = {
     "name" : "get_weather",
     "description" : "Get the weather of the given city",
@@ -18,6 +21,21 @@ get_weather_tool = {
             }
         },
         "required" : ["city"]
+    }
+}
+
+calculation_tool = {
+    "name" : "calculate",
+    "description" : "Calculate the given expression",
+    "input_schema":{
+        "type" : "object",
+        "properties" : {
+            "expression" : {
+                "type" : "string",
+                "description" : "expression to calculate"
+            }
+        },
+        "required" : ["expression"]
     }
 }
 
@@ -38,7 +56,7 @@ while True:
         "content" : user_input
     }
     ],
-    tools = [get_weather_tool]
+    tools = [get_weather_tool, calculation_tool]
 )
 
     while message.stop_reason == "tool_use":
@@ -46,7 +64,10 @@ while True:
         
         tool_results = []
         for tool_use in tool_uses:
-            result = get_weather(tool_use.input['city'])
+            if tool_use.name == "get_weather":
+                result = get_weather(tool_use.input['city'])
+            elif tool_use.name == "calculate":
+                result = str(calculate(tool_use.input['expression']))
             tool_results.append({
                 "type" : "tool_result",
                 "tool_use_id" : tool_use.id,
@@ -79,7 +100,7 @@ while True:
                     "content" : tool_results
                 }
             ],
-            tools = [get_weather_tool]
+            tools = [get_weather_tool, calculation_tool]
         )
 
     print(message.content[0].text)
